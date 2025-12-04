@@ -1,0 +1,22 @@
+# 데이터셋
+data/AI_Human.csv
+data/*.csv
+data/*.zip
+
+# 학습된 모델 체크포인트
+gpu_env/model_checkpoint/*
+models/
+models_trained/
+
+# 임시 파일 및 환경
+.conda/
+__pycache__/
+*.pyc
+*.log
+temp_katfishnet/
+process.txt
+expansion
+
+# 보고서 및 이미지
+report/
+*.pdf # (프로젝트 제안서.pdf는 제외할 수도 있음)

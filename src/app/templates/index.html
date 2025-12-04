@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI vs 인간 텍스트 판별기</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI vs 인간 텍스트 판별기</h1>
+            <p class="subtitle">LIME 기반 XAI 분석 시스템 (GPU RoBERTa)</p>
+        </div>
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="panel-title">📝 텍스트 입력</div>
+                <textarea id="inputText"
+                    placeholder="분석할 텍스트를 입력하세요...&#10;&#10;팁: Ctrl+Enter를 눌러 빠르게 분석할 수 있습니다!"></textarea>
+                <button class="analyze-btn" id="analyzeBtn" onclick="predict()">🔍 텍스트 분석하기</button>
+                <div class="loading" id="loading">
+                    <div class="loading-container">
+                        <div class="spinner-wrapper">
+                            <div class="spinner"></div>
+                        </div>
+                        <div class="loading-stages">
+                            <div class="loading-stage" id="stage1"><span class="stage-icon">🔄</span><span
+                                    class="stage-text">모델 예측 중...</span></div>
+                            <div class="loading-stage" id="stage2"><span class="stage-icon">🔍</span><span
+                                    class="stage-text">LIME 분석 중...</span></div>
+                            <div class="loading-stage" id="stage3"><span class="stage-icon">📊</span><span
+                                    class="stage-text">중요 단어 추출 중...</span></div>
+                        </div>
+                        <p class="loading-text">AI 설명 생성 중입니다</p>
+                        <p class="loading-subtext">약 5-10초 소요됩니다</p>
+                    </div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <div class="panel-title">📊 분석 결과</div>
+                <div id="result">
+                    <div class="result-header">
+                        <div class="prediction-section">
+                            <h3>판별 결과</h3>
+                            <span class="prediction-badge" id="prediction"></span>
+                        </div>
+                        <div class="confidence-section">
+                            <div class="confidence-label">신뢰도</div>
+                            <div class="confidence" id="confidence"></div>
+                        </div>
+                    </div>
+                    <div class="stats-panel">
+                        <div class="stat-card">
+                            <div class="stat-label">중요 단어</div>
+                            <div class="stat-value" id="keywordCount">0</div>
+                            <div class="stat-description">LIME 식별</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">전체 단어</div>
+                            <div class="stat-value" id="totalWords">0</div>
+                            <div class="stat-description">단어 수</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">평균 영향도</div>
+                            <div class="stat-value" id="avgImportance">0</div>
+                            <div class="stat-description">절댓값 평균</div>
+                        </div>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-title">💡 LIME 설명 가이드</div>
+                        <div class="legend-text">
+                            <span class="ai-keyword" style="background: rgba(239, 68, 68, 0.2);">빨간색</span> = AI 예측에 긍정적
+                            기여 |
+                            <span class="human-keyword" style="background: rgba(59, 130, 246, 0.2);">파란색</span> = Human
+                            예측에 긍정적 기여
+                            <br>색이 진할수록 영향력이 큽니다. 각 단어에 마우스를 올려 정확한 기여도를 확인하세요.
+                        </div>
+                    </div>
+                    <div class="highlighted-text" id="highlightedText"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>
