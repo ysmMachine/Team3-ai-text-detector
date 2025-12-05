@@ -13,8 +13,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.join(BASE_DIR, "..", "..")
 sys.path.insert(0, os.path.abspath(PROJECT_ROOT))
 
-DATA_PATH = os.path.join(BASE_DIR, "..", "data", "english_train_with_features.csv")
-OUTPUT_FEATURE_PATH = os.path.join(BASE_DIR, "..", "data", "selected_features.txt")
+DATA_PATH = os.path.join(PROJECT_ROOT, "data", "english_train_with_features.csv")
+OUTPUT_FEATURE_PATH = os.path.join(PROJECT_ROOT, "data", "selected_features.txt")
 
 def run_feature_engineering():
     print("Loading data for feature engineering...")

@@ -1,10 +1,3 @@
-import kagglehub
-
-# Download latest version
-path = kagglehub.dataset_download("shanegerami/ai-vs-human-text")
-
-print("Path to dataset files:", path)
-
 import pandas as pd
 
 def load_data(file_path='./data/AI_Human.csv', sample_frac=None):

@@ -44,14 +44,14 @@ class TextDataset(Dataset):
 # 설정
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_NAME = "roberta-base"
-BATCH_SIZE = 16
+BATCH_SIZE = 64
 EPOCHS = 3
 LEARNING_RATE = 2e-5
 MAX_LEN = 128
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 OUTPUT_DIR = os.path.join(BASE_DIR, "..", "..", "gpu_env", "model_checkpoint")
-DATA_PATH = os.path.join(BASE_DIR, "..", "..", "data", "english_train_with_features.csv")
+DATA_PATH = os.path.join(BASE_DIR, "..", "..", "data", "train.csv")
 
 
 if not os.path.exists(OUTPUT_DIR):
@@ -74,7 +74,7 @@ def train_roberta():
         print(f"데이터셋이 큽니다 ({len(df)}개). 빠른 학습을 위해 50,000개로 서브샘플링 중...")
         df = df.sample(n=50000, random_state=42)
         
-    # 분할
+    # 훈련/검증 분할 (내부 검증용, 테스트는 별도의 test.csv 사용)
     train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
     print(f"학습 크기: {len(train_df)}, 검증 크기: {len(val_df)}")
     

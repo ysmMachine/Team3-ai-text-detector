@@ -13,12 +13,19 @@ import string
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from tqdm import tqdm
 
 # NLTK 데이터 경로 설정
 import ssl
 
-# NLTK 데이터 경로 명시적 추가
-nltk.data.path.append(r'C:\Users\seoow\nltk_data')
+# 프로젝트 루트 기준 NLTK 데이터 경로 설정
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.join(BASE_DIR, "..", "..")
+NLTK_DATA_PATH = os.path.abspath(os.path.join(PROJECT_ROOT, "data", "nltk_data"))
+
+# NLTK 데이터 경로 추가 (맨 앞에 추가하여 우선순위 부여)
+if NLTK_DATA_PATH not in nltk.data.path:
+    nltk.data.path.insert(0, NLTK_DATA_PATH)
 
 try:
     _create_unverified_https_context = ssl._create_unverified_context
@@ -32,22 +39,22 @@ try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
     print("punkt 다운로드 중...")
-    nltk.download('punkt', quiet=True)
+    nltk.download('punkt', download_dir=NLTK_DATA_PATH, quiet=True)
 
 try:
     nltk.data.find('taggers/averaged_perceptron_tagger')
 except LookupError:
     print("averaged_perceptron_tagger 다운로드 중...")
-    nltk.download('averaged_perceptron_tagger', quiet=True)
+    nltk.download('averaged_perceptron_tagger', download_dir=NLTK_DATA_PATH, quiet=True)
 
 # 설정
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.join(BASE_DIR, "..", "..")
 sys.path.insert(0, os.path.abspath(PROJECT_ROOT))
 
-DATA_PATH = os.path.join(BASE_DIR, "..", "data", "AI_Human.csv")
-OUTPUT_DATA_PATH = os.path.join(BASE_DIR, "..", "data", "english_train_with_features.csv")
-OUTPUT_IMPORTANCE_PATH = "english_feature_importance.csv"
+DATA_PATH = os.path.join(BASE_DIR, "..", "..", "data", "AI_Human.csv")
+OUTPUT_DATA_PATH = os.path.join(BASE_DIR, "..", "..", "data", "english_train_with_features.csv")
+OUTPUT_IMPORTANCE_PATH = os.path.join(BASE_DIR, "..", "..", "data", "english_feature_importance.csv")
 NUM_CORES = max(1, mp.cpu_count() - 1)  # 하나의 코어는 시스템용으로 남김
 
 def get_entropy(text):
@@ -76,8 +83,7 @@ def get_readability(text, words, sentences):
     return score
 
 def analyze_text(text):
-    # 멀티프로세싱 환경에서 경로 설정 확인
-    nltk.data.path.append(r'C:\Users\seoow\nltk_data')
+    # NLTK 경로는 이미 모듈 레벨에서 설정됨
     
     if not isinstance(text, str): return {}
     
@@ -102,7 +108,19 @@ def analyze_text(text):
     ttr = get_ttr(words)
     readability = get_readability(text, words, sentences)
     
-
+    # 3. POS 태깅 (품사 비율)
+    try:
+        pos_tags = nltk.pos_tag(words)
+        pos_counts = Counter([tag for word, tag in pos_tags])
+        total_tags = len(pos_tags)
+        
+        # 명사, 동사, 형용사, 부사 비율
+        noun_ratio = sum([pos_counts.get(tag, 0) for tag in ['NN', 'NNS', 'NNP', 'NNPS']]) / max(1, total_tags)
+        verb_ratio = sum([pos_counts.get(tag, 0) for tag in ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']]) / max(1, total_tags)
+        adj_ratio = sum([pos_counts.get(tag, 0) for tag in ['JJ', 'JJR', 'JJS']]) / max(1, total_tags)
+        adverb_ratio = sum([pos_counts.get(tag, 0) for tag in ['RB', 'RBR', 'RBS']]) / max(1, total_tags)
+    except:
+        noun_ratio = verb_ratio = adj_ratio = adverb_ratio = 0
     
     # 4. 감성 분석
     try:
@@ -121,14 +139,29 @@ def analyze_text(text):
         'entropy': entropy,
         'ttr': ttr,
         'readability': readability,
+        'noun_ratio': noun_ratio,
+        'verb_ratio': verb_ratio,
+        'adj_ratio': adj_ratio,
+        'adverb_ratio': adverb_ratio,
         'sentiment': sentiment,
         'subjectivity': subjectivity,
         'punct_count': len([c for c in str(text) if c in string.punctuation])
     }
 
+def init_worker():
+    """멀티프로세싱 워커 초기화 - NLTK 경로 설정"""
+    import nltk
+    import os
+    # 프로젝트 루트 기준 NLTK 데이터 경로 재설정
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.join(base_dir, "..", "..")
+    nltk_data_path = os.path.abspath(os.path.join(project_root, "data", "nltk_data"))
+    if nltk_data_path not in nltk.data.path:
+        nltk.data.path.insert(0, nltk_data_path)
+
 def process_chunk(chunk_df):
     features = []
-    for text in chunk_df['text']:
+    for text in tqdm(chunk_df['text'], desc="Processing chunk", leave=False):
         features.append(analyze_text(text))
     return pd.DataFrame(features)
 
@@ -158,9 +191,13 @@ def perform_english_eda():
     chunks = np.array_split(df, NUM_CORES)
     
     # 병렬 처리
-    print(f"{NUM_CORES}개 코어를 사용하여 특징 추출 중 (1-2분 소요)...")
-    with mp.Pool(NUM_CORES) as pool:
-        results = pool.map(process_chunk, chunks)
+    print(f"{NUM_CORES}개 코어를 사용하여 특징 추출 중...")
+    with mp.Pool(NUM_CORES, initializer=init_worker) as pool:
+        results = list(tqdm(
+            pool.imap(process_chunk, chunks),
+            total=len(chunks),
+            desc="Overall progress"
+        ))
         
     # 결합
     df_features = pd.concat(results, ignore_index=True)

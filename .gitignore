@@ -2,6 +2,7 @@
 data/AI_Human.csv
 data/*.csv
 data/*.zip
+data/nltk_data/
 
 # 학습된 모델 체크포인트
 gpu_env/model_checkpoint/*
@@ -19,4 +20,4 @@ expansion
 
 # 보고서 및 이미지
 report/
-*.pdf # (프로젝트 제안서.pdf는 제외할 수도 있음)
+*.pdf
