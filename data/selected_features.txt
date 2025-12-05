@@ -1,4 +1,0 @@
-word_count
-burstiness
-avg_sent_len
-readability
